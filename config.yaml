@@ -1,0 +1,25 @@
+poll_interval_seconds: 300
+max_concurrent_jobs: 2
+claude_timeout_seconds: 600
+
+gitlab_url: https://gitlab.cern.ch
+worktree_base: ~/issue-bot/worktrees
+log_dir: ~/issue-bot/logs
+
+# Credentials — set via environment variables (preferred):
+#   export GITLAB_TOKEN=glpat-...
+#   export ANTHROPIC_API_KEY=sk-ant-...
+
+repos:
+  - owner: cms-cmu
+    name: coffea4bees
+    base_branch: master
+    parent_dep: barista       # clone coffea4bees inside the barista directory
+    keywords:
+      - "autofix"
+      - "claude-fix"
+      - "bot:fix"
+    dependencies:
+      - owner: cms-cmu
+        name: barista
+        base_branch: master
