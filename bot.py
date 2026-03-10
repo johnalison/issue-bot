@@ -46,6 +46,22 @@ def startup_checks(cfg):
             shutil.rmtree(wp, ignore_errors=True)
 
 
+def cleanup_resolved_issues(gl: GitLabClient):
+    """Delete worktrees for issues that have been closed on GitLab."""
+    for job in state.get_open_mr_jobs():
+        repo = job["repo"]
+        num = job["issue_number"]
+        try:
+            issue = gl.get_issue(repo, num)
+            if issue.get("state") == "closed":
+                log.info(f"Issue {repo}#{num} closed — cleaning up worktree")
+                if wp := job.get("worktree_path"):
+                    shutil.rmtree(wp, ignore_errors=True)
+                state.mark_completed(repo, num)
+        except Exception as e:
+            log.warning(f"Could not check issue {repo}#{num}: {e}")
+
+
 def main():
     cfg = cfg_module.load()
     state.init_db()
@@ -95,6 +111,8 @@ def main():
 
                 except Exception as e:
                     log.exception(f"Error polling {repo_cfg.full_name}: {e}")
+
+            cleanup_resolved_issues(gl)
 
             if not shutdown:
                 time.sleep(cfg.poll_interval_seconds)

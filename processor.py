@@ -143,7 +143,8 @@ def process_issue(issue: dict, repo_cfg: RepoConfig, cfg: Config, gl: GitLabClie
             target_branch=repo_cfg.base_branch,
         )
         job_log.info(f"MR opened: {mr_url}")
-        status = "completed"
+        job_log.info("Worktree kept until issue is closed on GitLab")
+        status = "mr_open"
 
     except subprocess.TimeoutExpired:
         job_log.error(f"Claude timed out after {cfg.claude_timeout_seconds}s")
@@ -152,9 +153,11 @@ def process_issue(issue: dict, repo_cfg: RepoConfig, cfg: Config, gl: GitLabClie
         job_log.exception(f"Unexpected error: {e}")
         status = "failed"
     finally:
-        state.release_job(project, num, status, pr_url=mr_url, session_id=session_id)
+        keep_worktree = status == "mr_open"
+        state.release_job(project, num, status, pr_url=mr_url, session_id=session_id,
+                          worktree_path=str(job_dir) if keep_worktree else None)
         job_log.info(f"Job finished: status={status}")
-        if job_dir.exists():
+        if not keep_worktree and job_dir.exists():
             shutil.rmtree(job_dir, ignore_errors=True)
         job_log.removeHandler(fh)
         fh.close()

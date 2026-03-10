@@ -86,6 +86,12 @@ class GitLabClient:
         })
         return resp.json()["web_url"]
 
+    def get_issue(self, project_path: str, issue_iid: int) -> dict:
+        """Return a single issue by IID."""
+        encoded = self._encode_path(project_path)
+        resp = self._get(f"/projects/{encoded}/issues/{issue_iid}")
+        return resp.json()
+
     def get_clone_url(self, project_path: str) -> str:
         """SSH clone URL using port 7999 (required for gitlab.cern.ch)."""
         host = self.base_url.replace("https://", "")

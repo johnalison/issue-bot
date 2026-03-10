@@ -26,9 +26,10 @@ def init_db():
                 repo        TEXT NOT NULL,
                 issue_number INTEGER NOT NULL,
                 processed_at TEXT NOT NULL,
-                status      TEXT NOT NULL,  -- completed, failed, skipped, timeout
+                status      TEXT NOT NULL,  -- mr_open, completed, failed, skipped, timeout
                 pr_url      TEXT,
                 session_id  TEXT,           -- Claude session ID for --resume
+                worktree_path TEXT,         -- kept until issue is closed on GitLab
                 PRIMARY KEY (repo, issue_number)
             );
 
@@ -79,16 +80,34 @@ def claim_job(repo: str, issue_number: int, worktree_path: str) -> bool:
 
 
 def release_job(repo: str, issue_number: int, status: str,
-                pr_url: str = None, session_id: str = None):
+                pr_url: str = None, session_id: str = None, worktree_path: str = None):
     """Move job from active to processed."""
     with _connect() as conn:
         conn.execute("DELETE FROM active_jobs WHERE repo=? AND issue_number=?",
                      (repo, issue_number))
         conn.execute(
             """INSERT OR REPLACE INTO processed_issues
-               (repo, issue_number, processed_at, status, pr_url, session_id)
-               VALUES (?,?,?,?,?,?)""",
-            (repo, issue_number, _now(), status, pr_url, session_id)
+               (repo, issue_number, processed_at, status, pr_url, session_id, worktree_path)
+               VALUES (?,?,?,?,?,?,?)""",
+            (repo, issue_number, _now(), status, pr_url, session_id, worktree_path)
+        )
+
+
+def get_open_mr_jobs() -> list[dict]:
+    """Return all jobs with status 'mr_open' that still have a worktree to clean up."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM processed_issues WHERE status='mr_open' AND worktree_path IS NOT NULL"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def mark_completed(repo: str, issue_number: int):
+    """Mark a resolved issue as completed and clear the worktree path."""
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE processed_issues SET status='completed', worktree_path=NULL WHERE repo=? AND issue_number=?",
+            (repo, issue_number)
         )
 
 

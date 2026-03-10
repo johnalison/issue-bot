@@ -41,7 +41,7 @@ worktrees/cms-cmu-coffea4bees-{iid}/
 
 - `PYTHONPATH` is set to include `barista/` so Claude can import it when running code
 - Git operations (branch, commit, push) happen only inside `barista/coffea4bees/`
-- The whole `worktrees/cms-cmu-coffea4bees-{iid}/` directory is deleted after the MR is opened
+- The worktree is kept after the MR is opened (status: `mr_open`); it is deleted once the issue is closed on GitLab
 
 ## Credentials
 
