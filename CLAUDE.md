@@ -59,20 +59,44 @@ those credentials automatically. Do NOT set `ANTHROPIC_API_KEY`.
 
 ## Current status (as of 2026-03-09)
 
-All modules written and tested for GitLab connectivity.
+All modules written. GitLab connectivity verified. Staged testing in progress.
 
 ### Done
-- [x] `state.py` — SQLite + WAL, atomic claim_job, stale job recovery
+- [x] `state.py` — SQLite + WAL, atomic claim_job, stale job recovery; worktree kept until issue closed
 - [x] `config.py` — YAML + env loading, `parent_dep` support for nested clone layout
-- [x] `gitlab_client.py` — issues, MR creation, clone URL, rate-limit handling
-- [x] `processor.py` — full pipeline, barista cloned first, coffea4bees inside it, PYTHONPATH set
-- [x] `bot.py` — polling loop, thread pool, signal handling, crash recovery
+- [x] `gitlab_client.py` — issues, MR creation, clone URL (port 7999), rate-limit handling
+- [x] `processor.py` — full pipeline; Claude invoked from barista root; best-judgement prompt
+- [x] `bot.py` — polling loop, thread pool, signal handling, crash recovery, cleanup of resolved issues
 - [x] `GITLAB_TOKEN` confirmed in `~/.bashrc`, GitLab API connection verified
 - [x] Confirmed `ANTHROPIC_API_KEY` not needed; subscription auth used instead
+- [x] `worktrees/bot-explore/` — barista + coffea4bees cloned for development/testing
+- [x] barista `CLAUDE.md` updated with bot guidance, issue type map, validation instructions
+- [x] `/test-local-CI` skill — to be defined in `barista/.claude/commands/test-local-CI.md`
 
-### TODO — pick up here
-- [ ] End-to-end test: file a test issue on coffea4bees with keyword `bot:fix`, watch bot clone, run Claude, open MR
-- [ ] Verify barista is importable from within a coffea4bees worktree (PYTHONPATH check)
+### Testing plan — pick up here
+
+**Stage 1: Claude headless invocation** (`worktrees/bot-explore/barista/`)
+- [ ] Run a trivial prompt via `~/.local/bin/claude -p "..." --output-format stream-json --dangerously-skip-permissions`
+- [ ] Verify subscription auth works headlessly
+- [ ] Verify stream-json output is parseable and session ID extractable
+
+**Stage 2: Claude reads and edits files** (`worktrees/bot-explore/barista/`)
+- [ ] Give Claude a trivial task (e.g. add a comment to a file in coffea4bees/)
+- [ ] Verify edits are scoped to `coffea4bees/` as instructed
+- [ ] Verify `git status --porcelain` shows the change
+
+**Stage 3: `/test-local-CI` skill**
+- [ ] Define skill in `barista/.claude/commands/test-local-CI.md` (do this in a Claude session inside barista)
+- [ ] Verify Claude can invoke it and report pass/fail results
+- [ ] Verify grid proxy copy from `~/x509up*` works
+
+**Stage 4: `process_issue()` direct call**
+- [ ] Call `process_issue()` directly with a fake issue dict (no bot.py, no GitLab polling)
+- [ ] Verify full clone → Claude → commit → MR pipeline
+
+**Stage 5: Full end-to-end**
+- [ ] File a test issue on coffea4bees with `bot:fix` keyword
+- [ ] Run `venv/bin/python bot.py` and watch the full pipeline
 - [ ] Set up as persistent process (systemd user service or tmux session)
 
 ## Key design decisions
