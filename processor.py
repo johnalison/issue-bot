@@ -91,6 +91,7 @@ def process_issue(issue: dict, repo_cfg: RepoConfig, cfg: Config, gl: GitLabClie
         claude_result = subprocess.run(
             [cfg.claude_bin, "-p", prompt,
              "--output-format", "stream-json",
+             "--verbose",
              "--dangerously-skip-permissions"],
             cwd=str(claude_cwd),
             capture_output=True,
@@ -237,6 +238,8 @@ def _mr_body(issue: dict, session_id: str | None) -> str:
 def _claude_env(cfg: Config, pythonpath: str) -> dict:
     env = os.environ.copy()
     # Auth via claude login subscription (no API key needed)
+    # Must unset CLAUDECODE to allow headless invocation from within a Claude session
+    env.pop("CLAUDECODE", None)
     if pythonpath:
         env["PYTHONPATH"] = pythonpath
     return env
