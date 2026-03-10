@@ -82,15 +82,17 @@ def process_issue(issue: dict, repo_cfg: RepoConfig, cfg: Config, gl: GitLabClie
             pythonpath = f"{pythonpath}:{existing}"
         job_log.info(f"PYTHONPATH includes: {list(dep_dirs.keys())}")
 
-        # 4. Invoke Claude inside the main repo directory
-        prompt = _build_prompt(title, body, issue_url, repo_cfg)
-        job_log.info("Invoking Claude Code")
+        # 4. Invoke Claude from the parent dep dir (if any) for broader context,
+        #    otherwise from the repo dir itself.
+        claude_cwd = dep_dirs[repo_cfg.parent_dep] if repo_cfg.parent_dep else repo_dir
+        prompt = _build_prompt(title, body, issue_url, repo_cfg, repo_dir, claude_cwd)
+        job_log.info(f"Invoking Claude Code from {claude_cwd.name}/")
 
         claude_result = subprocess.run(
             [cfg.claude_bin, "-p", prompt,
              "--output-format", "stream-json",
              "--dangerously-skip-permissions"],
-            cwd=str(repo_dir),
+            cwd=str(claude_cwd),
             capture_output=True,
             text=True,
             timeout=cfg.claude_timeout_seconds,
@@ -158,13 +160,23 @@ def process_issue(issue: dict, repo_cfg: RepoConfig, cfg: Config, gl: GitLabClie
         fh.close()
 
 
-def _build_prompt(title: str, body: str, url: str, repo_cfg: RepoConfig) -> str:
+def _build_prompt(title: str, body: str, url: str, repo_cfg: RepoConfig,
+                  repo_dir: Path, claude_cwd: Path) -> str:
     dep_note = ""
     if repo_cfg.dependencies:
         dep_names = [d.name for d in repo_cfg.dependencies]
         dep_note = (
             f"\nDependency packages ({', '.join(dep_names)}) are available on PYTHONPATH "
             f"and can be imported directly.\n"
+        )
+
+    edit_scope = ""
+    if repo_cfg.parent_dep:
+        rel = repo_dir.relative_to(claude_cwd)
+        edit_scope = (
+            f"\nYou are running from the `{claude_cwd.name}/` directory. "
+            f"The issue is filed against `{repo_cfg.name}`, which is located at `{rel}/`. "
+            f"Make all code edits inside `{rel}/` unless the issue explicitly involves `{claude_cwd.name}` itself.\n"
         )
 
     return f"""You are working inside a git repository. A GitLab issue has been filed that needs fixing.
@@ -174,14 +186,14 @@ Issue URL: {url}
 
 Issue description:
 {body}
-{dep_note}
+{dep_note}{edit_scope}
 Instructions:
 - Investigate the codebase and implement a fix for the issue described above.
 - Make all necessary edits to source files.
 - Do NOT run git commands, open MRs, or push branches — that is handled externally.
 - Do NOT add tests unless explicitly requested in the issue.
-- If you cannot confidently fix the issue (needs more context, is a design question, or is outside the codebase), make NO changes and explain why in your response.
-- When done, briefly summarize what you changed and why.
+- If the issue is ambiguous, make changes using your best judgement rather than doing nothing.
+- When done, briefly summarize what you changed and why, and list any judgement calls you made.
 """
 
 

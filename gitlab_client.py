@@ -87,6 +87,6 @@ class GitLabClient:
         return resp.json()["web_url"]
 
     def get_clone_url(self, project_path: str) -> str:
-        """SSH clone URL — assumes SSH key is configured on the host."""
+        """SSH clone URL using port 7999 (required for gitlab.cern.ch)."""
         host = self.base_url.replace("https://", "")
-        return f"git@{host}:{project_path}.git"
+        return f"ssh://git@{host}:7999/{project_path}.git"
