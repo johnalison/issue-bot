@@ -71,7 +71,9 @@ All modules written. GitLab connectivity verified. Staged testing in progress.
 - [x] Confirmed `ANTHROPIC_API_KEY` not needed; subscription auth used instead
 - [x] `worktrees/bot-explore/` — barista + coffea4bees cloned for development/testing
 - [x] barista `CLAUDE.md` updated with bot guidance, issue type map, validation instructions
-- [x] `/test-local-CI` skill — to be defined in `barista/.claude/commands/test-local-CI.md`
+- [ ] `/plan-fix` skill — define in barista Claude session (`barista/.claude/commands/plan-fix.md`)
+- [ ] `/test-local-CI` skill — define in barista Claude session (`barista/.claude/commands/test-local-CI.md`)
+- [ ] Update bot prompt in `processor.py` to instruct: `/plan-fix` → implement → `/test-local-CI`
 
 ### Testing plan — pick up here
 
