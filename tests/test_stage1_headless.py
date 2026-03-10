@@ -94,6 +94,25 @@ def run():
     else:
         print("WARN: no session_id found in output (non-fatal)")
 
+    # Extract and print Claude's actual response text
+    response_text = None
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+            if obj.get("type") == "result" and not obj.get("is_error"):
+                response_text = obj.get("result", "")
+        except json.JSONDecodeError:
+            pass
+
+    if response_text:
+        print(f"OK  Claude responded: {response_text!r}")
+    else:
+        print("FAIL: no result text found in output")
+        sys.exit(1)
+
     print("\nStage 1 PASSED")
 
 
