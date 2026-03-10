@@ -77,20 +77,19 @@ All modules written. GitLab connectivity verified. Staged testing in progress.
 
 ### Testing plan — pick up here
 
-**Stage 1: Claude headless invocation** (`worktrees/bot-explore/barista/`)
-- [ ] Run a trivial prompt via `~/.local/bin/claude -p "..." --output-format stream-json --dangerously-skip-permissions`
-- [ ] Verify subscription auth works headlessly
-- [ ] Verify stream-json output is parseable and session ID extractable
+**Stage 1: Claude headless invocation** ✅ DONE
+- Bugs found and fixed: must unset `CLAUDECODE` env var; `--verbose` required with `stream-json`
+- Test: `venv/bin/python tests/test_stage1_headless.py`
 
-**Stage 2: Claude reads and edits files** (`worktrees/bot-explore/barista/`)
-- [ ] Give Claude a trivial task (e.g. add a comment to a file in coffea4bees/)
-- [ ] Verify edits are scoped to `coffea4bees/` as instructed
-- [ ] Verify `git status --porcelain` shows the change
+**Stage 2: Claude reads and edits files** ✅ DONE
+- Claude correctly scopes edits to `coffea4bees/`, reports changes and judgement calls
+- Test: `venv/bin/python tests/test_stage2_edit_files.py`
 
-**Stage 3: `/test-local-CI` skill**
-- [ ] Define skill in `barista/.claude/commands/test-local-CI.md` (do this in a Claude session inside barista)
-- [ ] Verify Claude can invoke it and report pass/fail results
-- [ ] Verify grid proxy copy from `~/x509up*` works
+**Stage 3: Skills** (do in a Claude session inside `worktrees/bot-explore/barista/`)
+- [ ] Define `/plan-fix` in `barista/.claude/commands/plan-fix.md`
+- [ ] Define `/test-local-CI` in `barista/.claude/commands/test-local-CI.md`
+- [ ] Update bot prompt in `processor.py` to instruct: `/plan-fix` → implement → `/test-local-CI`
+- See prompts for building these skills documented in CLAUDE.md history
 
 **Stage 4: `process_issue()` direct call**
 - [ ] Call `process_issue()` directly with a fake issue dict (no bot.py, no GitLab polling)
@@ -99,6 +98,7 @@ All modules written. GitLab connectivity verified. Staged testing in progress.
 **Stage 5: Full end-to-end**
 - [ ] File a test issue on coffea4bees with `bot:fix` keyword
 - [ ] Run `venv/bin/python bot.py` and watch the full pipeline
+- [ ] Add log saving to end-to-end test for post-run inspection
 - [ ] Set up as persistent process (systemd user service or tmux session)
 
 ## Key design decisions
