@@ -179,7 +179,9 @@ def _build_prompt(title: str, body: str, url: str, repo_cfg: RepoConfig,
             f"Make all code edits inside `{rel}/` unless the issue explicitly involves `{claude_cwd.name}` itself.\n"
         )
 
-    return f"""You are working inside a git repository. A GitLab issue has been filed that needs fixing.
+    return f"""You are being invoked headlessly by the automated issue-bot on falcon.phys.cmu.edu.
+
+You are working inside a git repository. A GitLab issue has been filed that needs fixing.
 
 Issue title: {title}
 Issue URL: {url}
